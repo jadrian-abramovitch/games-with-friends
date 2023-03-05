@@ -42,5 +42,11 @@
   },
   "ct3aMetadata": {
     "initVersion": "7.5.6"
+  },
+  "prettier" : {
+      "trailingComma": "es5",
+      "tabWidth": 4,
+      "semi": false,
+      "singleQuote": true
   }
 }
