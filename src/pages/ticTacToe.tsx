@@ -17,14 +17,14 @@ const ticTacToe: NextPage = () => {
                         key={i.toString() + '-' + j.toString()}
                         className="m-4 h-32 w-32 bg-sky-500"
                     >
-                        <h2>{getSymbol(i, j)}</h2>
+                        <h2 className="">{getSymbol(i, j)}</h2>
                     </button>
                 );
             }
         }
         return gameBoard;
     };
-    const [turn, setTurn] = useState(1); // 1 -> player 'o's, 2 -> x's
+    const [turn, setTurn] = useState(1); // 1 ->'O's, 2 -> x's
     const [board, setBoard] = useState([
         [NaN, NaN, NaN],
         [NaN, NaN, NaN],
@@ -32,9 +32,14 @@ const ticTacToe: NextPage = () => {
     ]);
     const [winner, setWinner] = useState(NaN);
 
+    const mapper = {
+        NaN: '?',
+        1: 'O',
+        2: 'X',
+    };
+
     const getSymbol = (i: number, j: number) => {
-        if (isNaN(board[i][j])) return '';
-        return board[i][j] == 1 ? 'O' : 'X';
+        return mapper[board[i][j]];
     };
 
     const handleClick = (i: number, j: number) => {
@@ -50,15 +55,16 @@ const ticTacToe: NextPage = () => {
         window.alert(`Player ${turn} wins!`);
     };
 
-    const renderNextTurn = () => {
-        return (
-            <div>
-                <h2>Next Turn: {turn === 1 ? 'O' : 'X'}</h2>
-            </div>
-        );
-    };
-
     useEffect(() => {
+        let sum = 0;
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                sum += board[i][j];
+            }
+        }
+        if (sum === 1 * 5 + 2 * 4) {
+            window.alert('draw'); // TODO start here
+        }
         for (let i = 0; i < 3; i++) {
             // horizontal win
             if ((board[i][0] + board[i][1] + board[i][2]) % 3 === 0) {
@@ -78,14 +84,25 @@ const ticTacToe: NextPage = () => {
         }
     }, [JSON.stringify(board)]);
     return (
-        <>
-            {isNaN(winner) && renderNextTurn()}
-            {isNaN(winner) &&
-                getBoard().map((row, index) => (
-                    <div key={index.toString()}>{row}</div>
-                ))}
-            {!isNaN(winner) && <h2>Game Over</h2>}
-        </>
+        <div className="flex h-screen items-center justify-center">
+            <div>
+                <h1 className="text-center text-7xl">TicTacToe!</h1>
+                {isNaN(winner) &&
+                    getBoard().map((row, index) => (
+                        <div key={index.toString()}>{row}</div>
+                    ))}
+                {!isNaN(winner) && (
+                    <h2 className="text-center text-4xl">
+                        Game Over, player {turn} wins!
+                    </h2>
+                )}
+                {isNaN(winner) && (
+                    <h2 className="text-center text-4xl">
+                        Next Turn: {mapper[turn]}
+                    </h2>
+                )}
+            </div>
+        </div>
     );
 };
 
