@@ -1,8 +1,20 @@
 import { type NextPage } from 'next';
 import { useState } from 'react';
 import { useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { useUserIp } from '../../utils/useUserIp';
+
+const TOTAL_MOVES_PLAYER_O = 5;
+const TOTAL_MOVES_PLAYER_X = 4;
 
 const ticTacToe: NextPage = () => {
+    const ip = useUserIp();
+    console.log('ip: ', ip);
+    const router = useRouter();
+    const { gameId } = router.query;
+
+    console.log({ gameId });
+
     const getBoard = () => {
         const gameBoard: number[][] = [
             [NaN, NaN, NaN],
@@ -46,8 +58,7 @@ const ticTacToe: NextPage = () => {
         let oldBoard = board;
         oldBoard[i][j] = turn;
         setBoard(oldBoard);
-        console.log(board);
-        setTurn(3 - turn);
+        setTurn(3 - turn); // flips between 2 and 1
     };
 
     const sendWinMessage = () => {
@@ -62,25 +73,26 @@ const ticTacToe: NextPage = () => {
                 sum += board[i][j];
             }
         }
-        if (sum === 1 * 5 + 2 * 4) {
-            window.alert('draw'); // TODO start here
-        }
         for (let i = 0; i < 3; i++) {
             // horizontal win
             if ((board[i][0] + board[i][1] + board[i][2]) % 3 === 0) {
-                sendWinMessage();
+                return sendWinMessage();
             }
             // vertical win
             if ((board[0][i] + board[1][i] + board[2][i]) % 3 === 0) {
-                sendWinMessage();
+                return sendWinMessage();
             }
         }
         //diagonal wins
         if ((board[0][0] + board[1][1] + board[2][2]) % 3 === 0) {
-            sendWinMessage();
+            return sendWinMessage();
         }
         if ((board[0][2] + board[1][1] + board[2][0]) % 3 === 0) {
-            sendWinMessage();
+            return sendWinMessage();
+        }
+        if (sum === 1 * TOTAL_MOVES_PLAYER_O + 2 * TOTAL_MOVES_PLAYER_X) {
+            setWinner(0);
+            window.alert('draw');
         }
     }, [JSON.stringify(board)]);
     return (
@@ -91,10 +103,13 @@ const ticTacToe: NextPage = () => {
                     getBoard().map((row, index) => (
                         <div key={index.toString()}>{row}</div>
                     ))}
-                {!isNaN(winner) && (
+                {!isNaN(winner) && winner !== 0 && (
                     <h2 className="text-center text-4xl">
                         Game Over, player {turn} wins!
                     </h2>
+                )}
+                {!isNaN(winner) && winner === 0 && (
+                    <h2 className="text-center text-4xl">Game Over, Draw!</h2>
                 )}
                 {isNaN(winner) && (
                     <h2 className="text-center text-4xl">
