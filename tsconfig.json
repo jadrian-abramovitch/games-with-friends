@@ -19,7 +19,10 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"]
-    }
+    },
+    "types": [
+      "cookie"
+    ]
   },
   "include": [
     ".eslintrc.cjs",

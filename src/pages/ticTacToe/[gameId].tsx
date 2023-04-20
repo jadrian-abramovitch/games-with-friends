@@ -1,20 +1,17 @@
 import { type NextPage } from 'next';
 import { useState } from 'react';
 import { useEffect } from 'react';
-import { useRouter } from 'next/router';
 
-import axios from 'axios';
+import { api } from '~/utils/api';
 
 const TOTAL_MOVES_PLAYER_O = 5;
 const TOTAL_MOVES_PLAYER_X = 4;
 
 type CellState = 1 | 2 | typeof NaN;
 
-const TicTacToe: NextPage = ({ipAddress}) => {
-    const router = useRouter();
-    const { gameId } = router.query;
-
-    console.log({ gameId });
+const TicTacToe: NextPage = () => {
+    const hello = api.ticTacToe.startNewGame.useQuery({ gameId: 7 });
+    console.log('hello: ', hello);
 
     const getBoard = () => {
         const gameBoard = [0,1,2].map((i) => {
@@ -110,18 +107,7 @@ const TicTacToe: NextPage = ({ipAddress}) => {
                     </h2>
                 )}
             </div>
-            <h2>your Ip adress is {ipAddress}</h2>
         </div>
     );
 };
-export async function getServerSideProps() {
-  const ipAddressResponse = await axios.get('https://api.ipify.org?format=json');
-  const ipAddress = ipAddressResponse.data.ip as String;
-
-  return {
-    props: {
-      ipAddress,
-    },
-  };
-}
 export default TicTacToe;
