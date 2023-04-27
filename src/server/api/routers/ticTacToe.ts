@@ -6,10 +6,14 @@ import { serialize } from "cookie";
 
 export const ticTacToeRouter = createTRPCRouter({
   startNewGame: publicProcedure
-    .input(z.object({ gameId: z.number().int() }))
-    .query(({ ctx, input}) => {
-    const gameId = 5;
-      return ctx.prisma.Game.create({ data: { gameId } });
-    })
+    .input(z.object({ player1Id: z.string() }))
+    .query(({ ctx, input }) => {
+      return ctx.prisma.game.create({data: { player1: input.player1Id }});
+    }),
+  joinGame: publicProcedure
+    .input(z.object({gameId: z.number().int(), player2Id: z.string()}))
+    .query(({ctx, input}) => {
+      return ctx.prisma.game.update({where: {gameId: input.gameId}, data: {player2: input.player2Id}}); 
+  })
 });
 

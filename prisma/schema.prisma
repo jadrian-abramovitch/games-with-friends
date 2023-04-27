@@ -17,5 +17,7 @@ model Example {
 }
 
 model Game {
-    gameId   Int   @unique
+    gameId   Int  @id @default(autoincrement())
+    player1  String @default("")
+    player2  String @default("")
 }

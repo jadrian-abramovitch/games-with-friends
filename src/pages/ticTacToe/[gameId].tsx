@@ -10,8 +10,14 @@ const TOTAL_MOVES_PLAYER_X = 4;
 type CellState = 1 | 2 | typeof NaN;
 
 const TicTacToe: NextPage = () => {
-    const hello = api.ticTacToe.startNewGame.useQuery({ gameId: 7 });
-    console.log('hello: ', hello);
+    const hello = api.ticTacToe.startNewGame.useQuery({ player1Id: 'test id' });
+    console.log('hello: ', typeof hello.data?.gameId);
+
+    if (hello.isSuccess) {
+        //not allowed to do this based on react rules
+        const player2 = api.ticTacToe.joinGame.useQuery({gameId: hello.data?.gameId, player2Id: 'p2 test id'});
+        console.log('player 2:', player2);
+    }
 
     const getBoard = () => {
         const gameBoard = [0,1,2].map((i) => {
