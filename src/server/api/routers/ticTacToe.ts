@@ -2,8 +2,6 @@ import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
-import { serialize } from "cookie";
-
 export const ticTacToeRouter = createTRPCRouter({
   startNewGame: publicProcedure
     .input(z.object({ player1Id: z.string() }))
@@ -12,7 +10,7 @@ export const ticTacToeRouter = createTRPCRouter({
     }),
   joinGame: publicProcedure
     .input(z.object({gameId: z.number().int(), player2Id: z.string()}))
-    .query(({ctx, input}) => {
+    .mutation(({ctx, input}) => {
       return ctx.prisma.game.update({where: {gameId: input.gameId}, data: {player2: input.player2Id}}); 
   })
 });

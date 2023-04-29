@@ -1,7 +1,8 @@
+'use client';
+
 import { type NextPage } from 'next';
 import { useState } from 'react';
 import { useEffect } from 'react';
-
 import { api } from '~/utils/api';
 
 const TOTAL_MOVES_PLAYER_O = 5;
@@ -10,15 +11,48 @@ const TOTAL_MOVES_PLAYER_X = 4;
 type CellState = 1 | 2 | typeof NaN;
 
 const TicTacToe: NextPage = () => {
-    const hello = api.ticTacToe.startNewGame.useQuery({ player1Id: 'test id' });
-    console.log('hello: ', typeof hello.data?.gameId);
+    // okay I think I'm starting to understand the patterns here. This page needs to accept the gameId from the route
+    // since each player is running this code on their browser. They then set their own cookie, and register to the server
+    // and the server records the cookies of each player in the game
+    // how to make sure only 2 players can connect? How to make joining same game as friend simple?
 
-    if (hello.isSuccess) {
-        //not allowed to do this based on react rules
-        const player2 = api.ticTacToe.joinGame.useQuery({gameId: hello.data?.gameId, player2Id: 'p2 test id'});
-        console.log('player 2:', player2);
+
+    //const hello = api.ticTacToe.startNewGame.useQuery({ player1Id: 'test id' });
+    //console.log('hello: ', typeof hello.data?.gameId);
+    // this code can't live here because of re-renders
+
+    const registerToGame = api.ticTacToe.joinGame.useMutation();
+    function setCookie(name: string, value: string, days?: number): void {
+        if (typeof window !== 'undefined') {
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + value + expires + "; path=/";
+        }
+        const temp = registerToGame.mutate({gameId: 1, player2Id: 'test'});
+        console.log(temp);
     }
 
+    function getCookie(name: string): string | null {
+        if (typeof window !== 'undefined') {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+            }
+        }
+        return null;
+    }
+
+    if (!getCookie("testCookie")) {
+        setCookie("testCookie", "someValue", 5);
+    }
+    console.log(getCookie("testCookie"));
     const getBoard = () => {
         const gameBoard = [0,1,2].map((i) => {
             return([0,1,2].map((j) => ( 
