@@ -4,14 +4,26 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 export const ticTacToeRouter = createTRPCRouter({
   startNewGame: publicProcedure
-    .input(z.object({ player1Id: z.string() }))
-    .query(({ ctx, input }) => {
-      return ctx.prisma.game.create({data: { player1: input.player1Id }});
+    .mutation(({ ctx }) => {
+      return ctx.prisma.game.create({data: {}});
     }),
   joinGame: publicProcedure
-    .input(z.object({gameId: z.number().int(), player2Id: z.string()}))
-    .mutation(({ctx, input}) => {
-      return ctx.prisma.game.update({where: {gameId: input.gameId}, data: {player2: input.player2Id}}); 
+    .input(z.object({gameId: z.number().int(), playerId: z.string()}))
+    .mutation( async ({ctx, input}) => {
+    const game = await ctx.prisma.game.findUniqueOrThrow({where: {gameId: input.gameId}});
+    if (!game.player1) {
+      return ctx.prisma.game.update({where: {gameId: input.gameId}, data: {player1: input.playerId}});
+    } else if (game.player1) {
+      return ctx.prisma.game.update({where: {gameId: input.gameId}, data: {player2: input.playerId}});
+    }
+  }),
+  playSquare: publicProcedure
+  .input(z.object({playerId: z.string(), gameId: z.number().int(), xLocation: z.number().int(), yLocation: z.number().int()}))
+  .mutation(async ({ ctx, input }) => {
+    //needs to be in a transaction
+    // Game board will be represented as string where e -> empty, x is one player, y is other player
+    const game = await ctx.prisma.game.findUniqueOrThrow({where: {gameId: input.gameId}});
+    return game;
   })
 });
 

@@ -20,4 +20,5 @@ model Game {
     gameId   Int  @id @default(autoincrement())
     player1  String @default("")
     player2  String @default("")
+    board    String @default("")
 }

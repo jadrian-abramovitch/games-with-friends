@@ -4,11 +4,13 @@ import { type NextPage } from 'next';
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { api } from '~/utils/api';
+import { useRouter } from 'next/router';
 
 const TOTAL_MOVES_PLAYER_O = 5;
 const TOTAL_MOVES_PLAYER_X = 4;
 
 type CellState = 1 | 2 | typeof NaN;
+const myRandomCookie = Math.random().toString();
 
 const TicTacToe: NextPage = () => {
     // okay I think I'm starting to understand the patterns here. This page needs to accept the gameId from the route
@@ -20,6 +22,9 @@ const TicTacToe: NextPage = () => {
     //const hello = api.ticTacToe.startNewGame.useQuery({ player1Id: 'test id' });
     //console.log('hello: ', typeof hello.data?.gameId);
     // this code can't live here because of re-renders
+    const router = useRouter();
+    console.log('router: ', router, router.query, router.query.gameId);
+    const gameId = router.query.gameId;
 
     const registerToGame = api.ticTacToe.joinGame.useMutation();
     function setCookie(name: string, value: string, days?: number): void {
@@ -32,8 +37,6 @@ const TicTacToe: NextPage = () => {
             }
             document.cookie = name + "=" + value + expires + "; path=/";
         }
-        const temp = registerToGame.mutate({gameId: 1, player2Id: 'test'});
-        console.log(temp);
     }
 
     function getCookie(name: string): string | null {
@@ -49,10 +52,15 @@ const TicTacToe: NextPage = () => {
         return null;
     }
 
-    if (!getCookie("testCookie")) {
-        setCookie("testCookie", "someValue", 5);
+    const playerCookie = getCookie(myRandomCookie);
+    console.log('playerCookie: ', playerCookie);
+    if (!playerCookie) {
+        setCookie(myRandomCookie, myRandomCookie, 5);
+    } else if (gameId && registerToGame.isIdle) {
+        console.log('got to mutate', gameId, registerToGame);
+        registerToGame.mutate({gameId: Number(gameId), playerId: playerCookie});
     }
-    console.log(getCookie("testCookie"));
+
     const getBoard = () => {
         const gameBoard = [0,1,2].map((i) => {
             return([0,1,2].map((j) => ( 
