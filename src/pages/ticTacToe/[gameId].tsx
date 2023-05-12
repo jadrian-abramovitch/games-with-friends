@@ -13,18 +13,8 @@ type CellState = 1 | 2 | typeof NaN;
 const myRandomCookie = Math.random().toString();
 
 const TicTacToe: NextPage = () => {
-    // okay I think I'm starting to understand the patterns here. This page needs to accept the gameId from the route
-    // since each player is running this code on their browser. They then set their own cookie, and register to the server
-    // and the server records the cookies of each player in the game
-    // how to make sure only 2 players can connect? How to make joining same game as friend simple?
-
-
-    //const hello = api.ticTacToe.startNewGame.useQuery({ player1Id: 'test id' });
-    //console.log('hello: ', typeof hello.data?.gameId);
-    // this code can't live here because of re-renders
     const router = useRouter();
-    console.log('router: ', router, router.query, router.query.gameId);
-    const gameId = router.query.gameId;
+    const gameId = Number(router.query.gameId);
 
     const registerToGame = api.ticTacToe.joinGame.useMutation();
     function setCookie(name: string, value: string, days?: number): void {
@@ -52,6 +42,7 @@ const TicTacToe: NextPage = () => {
         return null;
     }
 
+    const sendMove = api.ticTacToe.playSquare.useMutation();
     const playerCookie = getCookie(myRandomCookie);
     console.log('playerCookie: ', playerCookie);
     if (!playerCookie) {
@@ -96,6 +87,10 @@ const TicTacToe: NextPage = () => {
     }
 
     const handleClick = (i: number, j: number) => {
+        if (typeof playerCookie === 'string' && typeof gameId === 'number') {
+            console.log(playerCookie, gameId, i, j);
+            sendMove.mutate({ gameId, playerCookie, xLocation: i, yLocation: j});
+        }
         const oldBoard = board;
         const rowToUpdate = oldBoard[i];
         if (rowToUpdate === undefined) throw new Error('Board is empty');

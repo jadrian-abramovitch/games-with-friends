@@ -18,12 +18,15 @@ export const ticTacToeRouter = createTRPCRouter({
     }
   }),
   playSquare: publicProcedure
-  .input(z.object({playerId: z.string(), gameId: z.number().int(), xLocation: z.number().int(), yLocation: z.number().int()}))
-  .mutation(async ({ ctx, input }) => {
+  .input(z.object({playerCookie: z.string(), gameId: z.number().int(), xLocation: z.number().int(), yLocation: z.number().int()}))
+  .mutation( async ({ ctx, input: {xLocation, yLocation, gameId}}) => {
     //needs to be in a transaction
     // Game board will be represented as string where e -> empty, x is one player, y is other player
-    const game = await ctx.prisma.game.findUniqueOrThrow({where: {gameId: input.gameId}});
-    return game;
+    const game = await ctx.prisma.game.findUniqueOrThrow({where: {gameId: gameId}});
+    const newBoard = game.board;
+    if (!newBoard[xLocation*3 + yLocation]) { throw Error('Square is not empty'); }
+    newBoard[xLocation*3 + yLocation] = 'x'; //TODO handle both players
+    return ctx.prisma.game.update({where: {gameId: game.gameId}, data: {board: newBoard}});
   })
 });
 
