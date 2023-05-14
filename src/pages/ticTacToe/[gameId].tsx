@@ -1,4 +1,4 @@
-'use client';
+//'use client';
 
 import { type NextPage } from 'next';
 import { useState } from 'react';
@@ -16,6 +16,8 @@ const TicTacToe: NextPage = () => {
     const router = useRouter();
     const gameId = Number(router.query.gameId);
 
+    const getGameState = api.ticTacToe.getBoard.useQuery({gameId: 3});
+    console.log(getGameState.data);
     const registerToGame = api.ticTacToe.joinGame.useMutation();
     function setCookie(name: string, value: string, days?: number): void {
         if (typeof window !== 'undefined') {
@@ -88,7 +90,6 @@ const TicTacToe: NextPage = () => {
 
     const handleClick = (i: number, j: number) => {
         if (typeof playerCookie === 'string' && typeof gameId === 'number') {
-            console.log(playerCookie, gameId, i, j);
             sendMove.mutate({ gameId, playerCookie, xLocation: i, yLocation: j});
         }
         const oldBoard = board;
@@ -101,6 +102,7 @@ const TicTacToe: NextPage = () => {
     };
 
     useEffect(() => {
+        console.log(getGameState.data);
         let sum = 0;
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {

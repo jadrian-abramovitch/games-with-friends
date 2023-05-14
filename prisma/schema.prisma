@@ -21,4 +21,5 @@ model Game {
     player1  String @default("")
     player2  String @default("")
     board String @default("         ")
+    currentTurn Int @default(1)
 }
