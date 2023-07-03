@@ -20,7 +20,8 @@ export const ticTacToeRouter = createTRPCRouter({
   getBoard: publicProcedure
     .input(z.object({ gameId: z.number().int() }))
     .query( ({ctx, input }) => {
-     return (ctx.prisma.game.findUniqueOrThrow({ where: {gameId: input.gameId}, select: {board: true} })); 
+      console.log('sdfkljasdf');
+    return (ctx.prisma.game.findUniqueOrThrow({ where: {gameId: input.gameId}, select: {board: true} })); 
   }),
     
   playSquare: publicProcedure

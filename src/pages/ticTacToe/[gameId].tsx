@@ -1,4 +1,4 @@
-//'use client';
+"use client";
 
 import { type NextPage } from 'next';
 import { useState } from 'react';
@@ -14,11 +14,43 @@ const myRandomCookie = Math.random().toString();
 
 const TicTacToe: NextPage = () => {
     const router = useRouter();
+    useEffect(() => {
+        console.log('test useEffect test');
+    console.log('useEffect: ', window.location.href);
+    }, []);
     const gameId = Number(router.query.gameId);
+    console.log('gameId: ', gameId);
 
-    const getGameState = api.ticTacToe.getBoard.useQuery({gameId: 3});
-    console.log(getGameState.data);
     const registerToGame = api.ticTacToe.joinGame.useMutation();
+
+ 
+    const map: { [key: CellState]: string } = {
+        NaN: '?',
+        1: 'O',
+        2: 'X',
+    };
+
+    const mapDbToBoard: { [key: string]: CellState } = {
+        '?': NaN,
+        'O': 1,
+        'X': 2,
+    }   
+    transformBoard('test');
+
+    function transformBoard(stringBoard: string) {
+        const newBoard: number[][] = [0,1,2].map(() => [0,1,2].map(() => NaN));
+        console.log('newBoard: ', newBoard);
+        let stringIndex = 0;
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                const temp: string = stringBoard[stringIndex] || '?';
+                newBoard[i][j] = mapDbToBoard[temp] || NaN;
+                stringIndex++;
+            }
+        }
+        return newBoard;
+    }
+
     function setCookie(name: string, value: string, days?: number): void {
         if (typeof window !== 'undefined') {
             let expires = "";
@@ -76,11 +108,6 @@ const TicTacToe: NextPage = () => {
     ]);
     const [winner, setWinner] = useState(NaN);
 
-    const map: { [key: CellState]: string } = {
-        NaN: '?',
-        1: 'O',
-        2: 'X',
-    };
     
     const getBoardValue = (i: number, j: number): CellState => {
         const row = board[i];
@@ -90,6 +117,7 @@ const TicTacToe: NextPage = () => {
 
     const handleClick = (i: number, j: number) => {
         if (typeof playerCookie === 'string' && typeof gameId === 'number') {
+            window.alert(gameId);
             sendMove.mutate({ gameId, playerCookie, xLocation: i, yLocation: j});
         }
         const oldBoard = board;
@@ -100,9 +128,13 @@ const TicTacToe: NextPage = () => {
         setBoard(oldBoard);
         setTurn(3 - turn); // flips between 2 and 1
     };
+    
+    const gameStateQuery = api.ticTacToe.getBoard.useQuery({gameId: gameId}, {enabled: false});
+    const refreshBoard = () => {
+        gameStateQuery.refetch();
+    }
 
     useEffect(() => {
-        console.log(getGameState.data);
         let sum = 0;
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
@@ -146,11 +178,12 @@ const TicTacToe: NextPage = () => {
                 {!isNaN(winner) && winner === 0 && (
                     <h2 className="text-center text-4xl">Game Over, Draw!</h2>
                 )}
-                {isNaN(winner) && (
+                {isNaN(winner) && gameStateQuery.isSuccess && (
                     <h2 className="text-center text-4xl">
-                        Next Turn: {map[turn]}
+                        <h2>{JSON.stringify(gameStateQuery.data)}</h2>
                     </h2>
                 )}
+                <button onClick={refreshBoard}>Refresh Board</button>
             </div>
         </div>
     );
