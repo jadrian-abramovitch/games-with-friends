@@ -1,5 +1,3 @@
-"use client";
-
 import { type NextPage } from 'next';
 import { useState } from 'react';
 import { useEffect } from 'react';
@@ -14,15 +12,9 @@ const myRandomCookie = Math.random().toString();
 
 const TicTacToe: NextPage = () => {
     const router = useRouter();
-    useEffect(() => {
-        console.log('test useEffect test');
-    console.log('useEffect: ', window.location.href);
-    }, []);
     const gameId = Number(router.query.gameId);
-    console.log('gameId: ', gameId);
 
     const registerToGame = api.ticTacToe.joinGame.useMutation();
-
  
     const map: { [key: CellState]: string } = {
         NaN: '?',
@@ -35,11 +27,9 @@ const TicTacToe: NextPage = () => {
         'O': 1,
         'X': 2,
     }   
-    transformBoard('test');
 
     function transformBoard(stringBoard: string) {
         const newBoard: number[][] = [0,1,2].map(() => [0,1,2].map(() => NaN));
-        console.log('newBoard: ', newBoard);
         let stringIndex = 0;
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
@@ -78,27 +68,50 @@ const TicTacToe: NextPage = () => {
 
     const sendMove = api.ticTacToe.playSquare.useMutation();
     const playerCookie = getCookie(myRandomCookie);
-    console.log('playerCookie: ', playerCookie);
     if (!playerCookie) {
         setCookie(myRandomCookie, myRandomCookie, 5);
     } else if (gameId && registerToGame.isIdle) {
-        console.log('got to mutate', gameId, registerToGame);
         registerToGame.mutate({gameId: Number(gameId), playerId: playerCookie});
     }
 
-    const getBoard = () => {
-        const gameBoard = [0,1,2].map((i) => {
-            return([0,1,2].map((j) => ( 
-                <button
-                    onClick={() => handleClick(i, j)}
-                    key={i.toString() + '-' + j.toString()}
-                    className="m-4 h-32 w-32 bg-sky-500"
-                >
-                    <h2 className="">{map[getBoardValue(i, j)]}</h2>
-                </button>
-           ))); 
-        });
-        return gameBoard 
+    const boardIsEmpty = () => {
+        console.log(board.flat().reduce((total, current) => total + current));
+        return(board.flat().reduce((total, current) => total + current) < 1); 
+    }
+
+    const getBoard = (board) => {
+        return(board.map((row, i: number) => {
+            return(row.map((cell, j: number) => {
+                return(
+                    <button
+                        disabled={!isNaN(cell)}
+                        onClick={() => handleClick(i, j)}
+                        key={i.toString() + '-' + j.toString()}
+                        className="m-4 h-32 w-32 bg-sky-500"
+                    >
+                    <h2 className="">{isNaN(cell) ?  "?" : map[getBoardValue(i, j)]}</h2>
+                    </button>
+                );
+            }));
+        }));
+            /*
+        if (!boardIsEmpty()) {
+            //window.alert('not empty');
+            const gameBoard = [0,1,2].map((i) => {
+                return([0,1,2].map((j) => ( 
+                    <button
+                        onClick={() => handleClick(i, j)}
+                        key={i.toString() + '-' + j.toString()}
+                        className="m-4 h-32 w-32 bg-sky-500"
+                    >
+                        <h2 className="">{map[getBoardValue(i, j)]}</h2>
+                    </button>
+                ))); 
+            });
+        return gameBoard
+        } else {
+            return board;
+        }*/
     };
     const [turn, setTurn] = useState<number>(1); // 1 ->'O's, 2 -> x's
     const [board, setBoard] = useState<number[][]>([
@@ -125,13 +138,13 @@ const TicTacToe: NextPage = () => {
         if (rowToUpdate === undefined) throw new Error('Board is empty');
         rowToUpdate[j] = turn;
         oldBoard[i] = rowToUpdate;
-        setBoard(oldBoard);
+        //setBoard(oldBoard);
         setTurn(3 - turn); // flips between 2 and 1
     };
     
     const gameStateQuery = api.ticTacToe.getBoard.useQuery({gameId: gameId}, {enabled: false});
     const refreshBoard = () => {
-        gameStateQuery.refetch();
+        gameStateQuery.refetch().then(({data}) => setBoard(transformBoard(data?.board))).catch(() => window.alert('could not fetch board state'));
     }
 
     useEffect(() => {
@@ -167,7 +180,7 @@ const TicTacToe: NextPage = () => {
             <div>
                 <h1 className="text-center text-7xl">TicTacToe!</h1>
                 {isNaN(winner) &&
-                    getBoard().map((row, index) => (
+                    getBoard(board).map((row, index: number) => (
                         <div key={index.toString()}>{row}</div>
                     ))}
                 {!isNaN(winner) && winner !== 0 && (
@@ -181,6 +194,8 @@ const TicTacToe: NextPage = () => {
                 {isNaN(winner) && gameStateQuery.isSuccess && (
                     <h2 className="text-center text-4xl">
                         <h2>{JSON.stringify(gameStateQuery.data)}</h2>
+                        <h2>{JSON.stringify(board)}</h2>
+                        <h2>{JSON.stringify(transformBoard(gameStateQuery.data.board))}</h2>
                     </h2>
                 )}
                 <button onClick={refreshBoard}>Refresh Board</button>
