@@ -3,9 +3,7 @@ import { useState } from 'react';
 import { useEffect } from 'react';
 import { api } from '~/utils/api';
 import { useRouter } from 'next/router';
-
-const TOTAL_MOVES_PLAYER_O = 5;
-const TOTAL_MOVES_PLAYER_X = 4;
+import useCheckForWin from './useCheckForWin';
 
 const playerCookieExists = () => {
     if (typeof window !== 'undefined') {
@@ -38,12 +36,7 @@ const getCookie = (name: string): string | null => {
         for (let i = 0; i < ca.length; i++) {
             let c = ca[i];
             while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-            console.log('cookie: ', c);
             if (c.indexOf(nameEQ) == 0) {
-                console.log(
-                    'if statement',
-                    c.substring(nameEQ.length, c.length)
-                );
                 return c.substring(nameEQ.length, c.length);
             }
         }
@@ -75,12 +68,8 @@ const TicTacToe: NextPage = () => {
         [NaN, NaN, NaN],
         [NaN, NaN, NaN],
     ]);
-    const [winner, setWinner] = useState(NaN);
+    const winner = useCheckForWin(board, turn);
     const [playerCookie, setPlayerCookie] = useState<string>();
-    useEffect(
-        () => console.log('cookie changed fam: ', playerCookie),
-        [playerCookie]
-    );
 
     const registerToGame = api.ticTacToe.joinGame.useMutation();
     const sendMove = api.ticTacToe.playSquare.useMutation({
@@ -109,9 +98,7 @@ const TicTacToe: NextPage = () => {
     }
 
     const currentPlayerCookie = playerCookieExists();
-    console.log('cookie logslkfanj: ', currentPlayerCookie, playerCookie);
     if (currentPlayerCookie && currentPlayerCookie !== playerCookie) {
-        console.log('if statement is true');
         setPlayerCookie(currentPlayerCookie);
     } else if (!currentPlayerCookie) {
         setCookie(randomNumberString, '', 2);
@@ -160,35 +147,6 @@ const TicTacToe: NextPage = () => {
         setTurn(3 - turn); // flips between 2 and 1
     };
 
-    useEffect(() => {
-        let sum = 0;
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-                sum += boardAt(i, j);
-            }
-        }
-        for (let i = 0; i < 3; i++) {
-            // horizontal win
-            if ((boardAt(i, 0) + boardAt(i, 1) + boardAt(i, 2)) % 3 === 0) {
-                return setWinner(turn);
-            }
-            // vertical win
-            if ((boardAt(0, i) + boardAt(1, i) + boardAt(2, i)) % 3 === 0) {
-                return setWinner(turn);
-            }
-        }
-        //diagonal wins
-        if ((boardAt(0, 0) + boardAt(1, 1) + boardAt(2, 2)) % 3 === 0) {
-            return setWinner(turn);
-        }
-        if ((boardAt(0, 2) + boardAt(1, 1) + boardAt(2, 0)) % 3 === 0) {
-            return setWinner(turn);
-        }
-        // Draw -- all tiles played and no winner
-        if (sum === 1 * TOTAL_MOVES_PLAYER_O + 2 * TOTAL_MOVES_PLAYER_X) {
-            setWinner(0);
-        }
-    }, [JSON.stringify(board)]);
     return (
         <div className="flex h-screen items-center justify-center">
             <div>
