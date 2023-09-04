@@ -36,7 +36,7 @@ export const ticTacToeRouter = createTRPCRouter({
             console.log('sdfkljasdf');
             return ctx.prisma.game.findUniqueOrThrow({
                 where: { gameId: input.gameId },
-                select: { board: true },
+                select: { board: true, currentTurn: true },
             });
         }),
 

@@ -1,6 +1,5 @@
 import { type NextPage } from 'next';
 import { useState } from 'react';
-import { useEffect } from 'react';
 import { api } from '~/utils/api';
 import { useRouter } from 'next/router';
 import useCheckForWin from './useCheckForWin';
@@ -29,20 +28,6 @@ const setCookie = (name: string, value: string, days?: number): void => {
     }
 };
 
-const getCookie = (name: string): string | null => {
-    if (typeof window !== 'undefined') {
-        const nameEQ = name + '=';
-        const ca = document.cookie.split(';');
-        for (let i = 0; i < ca.length; i++) {
-            let c = ca[i];
-            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-            if (c.indexOf(nameEQ) == 0) {
-                return c.substring(nameEQ.length, c.length);
-            }
-        }
-    }
-    return null;
-};
 type CellState = 1 | 2 | typeof NaN;
 const map: { [key: CellState]: string } = {
     NaN: '?',
@@ -70,15 +55,35 @@ const TicTacToe: NextPage = () => {
     ]);
     const winner = useCheckForWin(board, turn);
     const [playerCookie, setPlayerCookie] = useState<string>();
+    const [playerId, setPlayerId] = useState<number>(0);
 
-    const registerToGame = api.ticTacToe.joinGame.useMutation();
+    const registerToGame = api.ticTacToe.joinGame.useMutation({
+        onSuccess: (data) => {
+            if (playerCookie === data?.player1) {
+                setPlayerId(1);
+            } else if (playerCookie === data?.player2) {
+                setPlayerId(2);
+            }
+        },
+    });
     const sendMove = api.ticTacToe.playSquare.useMutation({
-        onSuccess: () => gameStateQuery.refetch(),
+        onSuccess: () => {
+            gameStateQuery.refetch();
+            setTurn(3 - turn); // flips between 2 and 1
+        },
+        onError: (error) => {
+            if (error.message === "Other player's turn") {
+                window.alert('Patience young grasshopper');
+            }
+        },
     });
     const gameStateQuery = api.ticTacToe.getBoard.useQuery(
         { gameId: gameId },
         {
-            onSuccess: (data) => setBoard(transformBoardToArray(data?.board)),
+            onSuccess: (data) => {
+                setBoard(transformBoardToArray(data?.board));
+                setTurn(data.currentTurn);
+            },
         }
     );
 
@@ -102,7 +107,6 @@ const TicTacToe: NextPage = () => {
         setPlayerCookie(currentPlayerCookie);
     } else if (!currentPlayerCookie) {
         setCookie(randomNumberString, '', 2);
-        // setPlayerCookie(randomNumberString);
     }
     if (playerCookie && gameId && registerToGame.isIdle) {
         registerToGame.mutate({
@@ -111,15 +115,23 @@ const TicTacToe: NextPage = () => {
         });
     }
 
-    const boardStructure = (board: number[][]) => {
+    const boardStructure = (
+        board: number[][],
+        turn: number,
+        playerId: number
+    ) => {
         return board.map((row, i: number) => {
             return row.map((cell, j: number) => {
                 return (
                     <button
-                        disabled={!isNaN(cell)}
+                        disabled={turn !== playerId}
                         onClick={async () => await handleClick(i, j)}
                         key={i.toString() + '-' + j.toString()}
-                        className="m-4 h-32 w-32 bg-sky-500"
+                        className={
+                            turn === playerId
+                                ? 'm-4 h-32 w-32 bg-sky-500'
+                                : 'm-4 h-32 w-32 bg-gray-600'
+                        }
                     >
                         <h2 className="">
                             {isNaN(cell) ? '?' : map[boardAt(i, j)]}
@@ -144,27 +156,40 @@ const TicTacToe: NextPage = () => {
                 yLocation: j,
             });
         }
-        setTurn(3 - turn); // flips between 2 and 1
     };
 
     return (
-        <div className="flex h-screen items-center justify-center">
-            <div>
-                <h1 className="text-center text-7xl">TicTacToe!</h1>
-                {isNaN(winner) &&
-                    boardStructure(board).map((row, index: number) => (
-                        <div key={index.toString()}>{row}</div>
-                    ))}
-                {!isNaN(winner) && winner !== 0 && (
-                    <h2 className="text-center text-4xl">
-                        Game Over, player {map[3 - winner]} wins!
-                    </h2>
-                )}
-                {!isNaN(winner) && winner === 0 && (
-                    <h2 className="text-center text-4xl">Game Over, Draw!</h2>
-                )}
+        <>
+            <div className="flex h-screen items-center justify-center">
+                <div>
+                    <h1 className="text-center text-7xl">TicTacToe!</h1>
+                    {isNaN(winner) &&
+                        boardStructure(board, turn, playerId).map(
+                            (row, index: number) => (
+                                <div key={index.toString()}>{row}</div>
+                            )
+                        )}
+                    {!isNaN(winner) && winner !== 0 && (
+                        <h2 className="text-center text-4xl">
+                            {winner === playerId
+                                ? 'You won!'
+                                : 'You lost :( better luck next time'}
+                        </h2>
+                    )}
+                    {!isNaN(winner) && winner === 0 && (
+                        <h2 className="text-center text-4xl">
+                            Game Over, Draw!
+                        </h2>
+                    )}
+                    {isNaN(winner) && turn === playerId && (
+                        <h2>It's your turn</h2>
+                    )}
+                    {isNaN(winner) && turn !== playerId && (
+                        <h2>... Waiting for other player to move</h2>
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 export default TicTacToe;
