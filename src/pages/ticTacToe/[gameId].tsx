@@ -3,30 +3,7 @@ import { useState } from 'react';
 import { api } from '~/utils/api';
 import { useRouter } from 'next/router';
 import useCheckForWin from './useCheckForWin';
-
-const playerCookieExists = () => {
-    if (typeof window !== 'undefined') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            if (cookies[i]?.includes('ticTacToe')) {
-                return cookies[i];
-            }
-        }
-    }
-    return false;
-};
-const setCookie = (name: string, value: string, days?: number): void => {
-    if (typeof window !== 'undefined') {
-        let expires = '';
-        if (days) {
-            const date = new Date();
-            date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-            expires = '; expires=' + date.toUTCString();
-        }
-        document.cookie =
-            'ticTacToe' + name + '=' + value + expires + '; path=/';
-    }
-};
+import UsePlayerCookie from './usePlayerCookie';
 
 type CellState = 1 | 2 | typeof NaN;
 const map: { [key: CellState]: string } = {
@@ -41,7 +18,6 @@ const mapDbToBoard: { [key: string]: CellState } = {
     X: 2,
 };
 
-const randomNumberString = Math.random().toString();
 
 const TicTacToe: NextPage = () => {
     const router = useRouter();
@@ -54,8 +30,10 @@ const TicTacToe: NextPage = () => {
         [NaN, NaN, NaN],
     ]);
     const winner = useCheckForWin(board, turn);
-    const [playerCookie, setPlayerCookie] = useState<string>();
     const [playerId, setPlayerId] = useState<number>(0);
+
+    const cookie = UsePlayerCookie();
+    const [playerCookie, ] = useState<string>(cookie);
 
     const registerToGame = api.ticTacToe.joinGame.useMutation({
         onSuccess: (data) => {
@@ -67,9 +45,8 @@ const TicTacToe: NextPage = () => {
         },
     });
     const sendMove = api.ticTacToe.playSquare.useMutation({
-        onSuccess: () => {
-            gameStateQuery.refetch();
-            setTurn(3 - turn); // flips between 2 and 1
+        onSuccess: async () => {
+            await gameStateQuery.refetch();
         },
         onError: (error) => {
             if (error.message === "Other player's turn") {
@@ -102,12 +79,7 @@ const TicTacToe: NextPage = () => {
         return newBoard;
     }
 
-    const currentPlayerCookie = playerCookieExists();
-    if (currentPlayerCookie && currentPlayerCookie !== playerCookie) {
-        setPlayerCookie(currentPlayerCookie);
-    } else if (!currentPlayerCookie) {
-        setCookie(randomNumberString, '', 2);
-    }
+
     if (playerCookie && gameId && registerToGame.isIdle) {
         registerToGame.mutate({
             gameId: Number(gameId),
@@ -125,7 +97,7 @@ const TicTacToe: NextPage = () => {
                 return (
                     <button
                         disabled={turn !== playerId}
-                        onClick={async () => await handleClick(i, j)}
+                        onClick={() => handleClick(i, j)}
                         key={i.toString() + '-' + j.toString()}
                         className={
                             turn === playerId
@@ -147,7 +119,7 @@ const TicTacToe: NextPage = () => {
         return row[j] as CellState;
     };
 
-    const handleClick = async (i: number, j: number) => {
+    const handleClick = (i: number, j: number) => {
         if (typeof playerCookie === 'string' && typeof gameId === 'number') {
             sendMove.mutate({
                 gameId,
@@ -182,10 +154,10 @@ const TicTacToe: NextPage = () => {
                         </h2>
                     )}
                     {isNaN(winner) && turn === playerId && (
-                        <h2>It's your turn</h2>
+                        <h2>Your turn!</h2>
                     )}
                     {isNaN(winner) && turn !== playerId && (
-                        <h2>... Waiting for other player to move</h2>
+                        <h2>Waiting for other player to move</h2>
                     )}
                 </div>
             </div>
