@@ -33,7 +33,7 @@ const TicTacToe: NextPage = () => {
     const [playerId, setPlayerId] = useState<number>(0);
 
     const cookie = UsePlayerCookie();
-    const [playerCookie, ] = useState<string>(cookie);
+    const [playerCookie, ] = useState(cookie);
 
     const registerToGame = api.ticTacToe.joinGame.useMutation({
         onSuccess: (data) => {
