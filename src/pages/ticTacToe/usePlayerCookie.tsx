@@ -28,7 +28,8 @@ const randomNumberString = Math.random().toString();
         setCookie(randomNumberString, '', 2);
     }
     currentPlayerCookie = playerCookieExists();
-    if (!currentPlayerCookie) throw new Error('Cookie Could not be set');
+    console.log('how many times is this invoked?');
+    // if (!currentPlayerCookie) throw new Error('Cookie Could not be set');
     return(currentPlayerCookie);
 }
 
